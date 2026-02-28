@@ -1,6 +1,6 @@
 title: "Claude Code プロンプト設計パターン集 — コピペで使える15の実践テンプレート"
 summary: "Claude Codeの出力精度を上げる15のプロンプトパターンを4カテゴリで解説。基本の三段構成からマルチファイル実装・Git連携・依存移行まで、コピペ即使えるテンプレート付きで紹介するウーパールーパーVTuber「みょうが」の実践ノウハウ集。"
-topics: ["claudecode", "ai", "prompt", "開発効率化"]
+topics: ["ai", "claudecode", "programming", "prompt"]
 published: true
 price: 980
 chapters:
