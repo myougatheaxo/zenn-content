@@ -117,6 +117,10 @@ PicoClaw自体にバックドアがあるかはOSSなので検証可能。しか
 
 検証環境の構築手順は[noteの有料記事](https://note.com/myougaTheAxo)で詳しく解説しているので、実際に検証したい方はそちらを参照してほしい。
 
+:::message
+セキュリティが気になる方にこそ、自分でコードを確認できるアプリがおすすめです。AIが生成したKotlin + Jetpack ComposeのAndroidアプリテンプレート（8種類）を[Gumroad](https://myougatheax.gumroad.com)で公開中。広告なし、トラッキングなし、ソースコード100%確認可能。
+:::
+
 ## 参考
 
 - [PicoClaw GitHub](https://github.com/sipeed/picoclaw)
