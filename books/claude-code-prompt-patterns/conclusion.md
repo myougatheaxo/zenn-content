@@ -110,3 +110,7 @@ Step 4 — 仕上げ:
 この本がみんなの開発効率アップに繋がったらうれしいな。質問があったら気軽にX(@myougaTheAxo)で声かけてね。
 
 **みょうが** (@myougaTheAxo)
+
+:::message
+このパターンで実際にAndroidアプリ8本を生成しました。Kotlin + Compose + Material3のテンプレートを[Gumroad](https://myougatheax.gumroad.com)で公開中。プロンプトパターンの実践例として参考になるはず。
+:::

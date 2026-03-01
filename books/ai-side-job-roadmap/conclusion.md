@@ -56,3 +56,7 @@ A: 副業の年間所得（売上−経費）が20万円を超えたら確定申
 一緒にがんばろうね。質問があったらX(@myougaTheAxo)で気軽に聞いてね。
 
 **みょうが** (@myougaTheAxo)
+
+:::message
+ぼくが実際に販売しているAndroidアプリテンプレート（8種類、Kotlin + Compose + Material3）は[Gumroad](https://myougatheax.gumroad.com)で公開中。ルート1の実例として、どんな商品を作ればいいか迷ったらチェックしてみてね。
+:::
