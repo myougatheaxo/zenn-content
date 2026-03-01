@@ -1,0 +1,14 @@
+title: "AIでAndroidアプリを作る実践ガイド — コードが書けなくてもGoogle Playに出せる"
+summary: "Claude Code・Cursor・CopilotなどのAIツールを使って、KotlinとJetpack ComposeのAndroidアプリを実際に作り、Google Playへ公開し、さらに収益化するまでの完全ロードマップ。ハビットトラッカーを題材にした手順書形式で、コーディング経験ゼロでも追える設計。"
+topics: ["android", "kotlin", "claudecode", "ai", "jetpackcompose"]
+published: true
+price: 980
+chapters:
+  - intro
+  - chapter1
+  - chapter2
+  - chapter3
+  - chapter4
+  - chapter5
+  - chapter6
+  - conclusion
