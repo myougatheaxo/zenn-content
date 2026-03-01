@@ -104,3 +104,16 @@ Room Entityとして適切に定義。autoGenerate、デフォルト値、型安
 :::message
 8種類のAndroidアプリテンプレート（Kotlin + Compose + Material3）を[Gumroad](https://myougatheax.gumroad.com)で公開中。プロンプト設計済み、ビルド手順付き。
 :::
+
+---
+
+## 関連記事
+
+- [Claude Codeに「Androidアプリ作って」と言ったら47秒で完成した](https://zenn.dev/myougatheaxo/articles/ai-android-app-47seconds)
+- [Claude Code vs Cursor vs GitHub Copilot 比較](https://zenn.dev/myougatheaxo/articles/claude-code-vs-cursor-copilot)
+- [コーディング経験ゼロからAndroidアプリを11分で動かす](https://zenn.dev/myougatheaxo/articles/android-app-no-code-guide)
+- [「無料アプリ」の本当のコスト](https://zenn.dev/myougatheaxo/articles/free-apps-hidden-cost-2026)
+
+:::message
+8種類のAndroidアプリテンプレートを[Gumroad](https://myougatheax.gumroad.com)で公開中。
+:::

@@ -144,3 +144,16 @@ val BlueGrey80 = Color(0xFFB0BEC5)
 8種類のAndroidアプリテンプレート（習慣トラッカー、割り勘計算、タイマー、家計簿、予算管理、タスク管理、単位変換、会議タイマー）を[Gumroad](https://myougatheax.gumroad.com)で公開中。
 全てKotlin + Jetpack Compose + Material3。ビルド手順書付き。
 :::
+
+---
+
+## 関連記事
+
+- [Claude Codeに「Androidアプリ作って」と言ったら47秒で完成した](https://zenn.dev/myougatheaxo/articles/ai-android-app-47seconds)
+- [Claude Code vs Cursor vs GitHub Copilot 比較](https://zenn.dev/myougatheaxo/articles/claude-code-vs-cursor-copilot)
+- [コーディング経験ゼロからAndroidアプリを11分で動かす](https://zenn.dev/myougatheaxo/articles/android-app-no-code-guide)
+- [「無料アプリ」の本当のコスト](https://zenn.dev/myougatheaxo/articles/free-apps-hidden-cost-2026)
+
+:::message
+8種類のAndroidアプリテンプレートを[Gumroad](https://myougatheax.gumroad.com)で公開中。
+:::
