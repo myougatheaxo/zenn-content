@@ -1,6 +1,6 @@
 ---
-title: "Firebase Auth + Compose連携ガイド — メール/Google認証"
-emoji: "🔥"
+title: "Firebase Authentication完全ガイド — Google/Email認証"
+emoji: "🔐"
 type: "tech"
 topics: ["android", "jetpackcompose", "kotlin", "firebase"]
 published: true
@@ -8,17 +8,22 @@ published: true
 
 ## この記事で学べること
 
-**Firebase Authentication**をComposeアプリに統合する方法（メール認証、Google認証、状態管理）を解説します。
+**Firebase Authentication**（Googleログイン、Email/Password認証、認証状態管理、Compose UI統合）を解説します。
 
 ---
 
 ## セットアップ
 
 ```kotlin
+// build.gradle.kts
 dependencies {
-    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.android.gms:play-services-auth:21.0.0")
+
+    // Credential Manager (Google Sign-In)
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 }
 ```
 
@@ -27,35 +32,59 @@ dependencies {
 ## AuthRepository
 
 ```kotlin
-class AuthRepository(private val auth: FirebaseAuth = Firebase.auth) {
-
+class AuthRepository @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val credentialManager: CredentialManager
+) {
     val currentUser: Flow<FirebaseUser?> = callbackFlow {
-        val listener = FirebaseAuth.AuthStateListener { auth ->
-            trySend(auth.currentUser)
-        }
+        val listener = FirebaseAuth.AuthStateListener { trySend(it.currentUser) }
         auth.addAuthStateListener(listener)
         awaitClose { auth.removeAuthStateListener(listener) }
     }
 
-    suspend fun signInWithEmail(email: String, password: String): Result<FirebaseUser> {
-        return try {
-            val result = auth.signInWithEmailAndPassword(email, password).await()
-            Result.success(result.user!!)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun signUpWithEmail(email: String, password: String): Result<FirebaseUser> {
-        return try {
+    // Email/Password登録
+    suspend fun signUp(email: String, password: String): Result<FirebaseUser> =
+        try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             Result.success(result.user!!)
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
 
-    fun signOut() = auth.signOut()
+    // Email/Passwordログイン
+    suspend fun signIn(email: String, password: String): Result<FirebaseUser> =
+        try {
+            val result = auth.signInWithEmailAndPassword(email, password).await()
+            Result.success(result.user!!)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    // Googleログイン
+    suspend fun signInWithGoogle(context: Context): Result<FirebaseUser> =
+        try {
+            val googleIdOption = GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
+                .build()
+
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOption)
+                .build()
+
+            val result = credentialManager.getCredential(context, request)
+            val credential = result.credential
+            val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data)
+
+            val firebaseCredential = GoogleAuthProvider
+                .getCredential(googleIdToken.idToken, null)
+            val authResult = auth.signInWithCredential(firebaseCredential).await()
+            Result.success(authResult.user!!)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    fun signOut() { auth.signOut() }
 }
 ```
 
@@ -70,7 +99,7 @@ class AuthViewModel @Inject constructor(
 ) : ViewModel() {
 
     val currentUser = authRepository.currentUser
-        .stateIn(viewModelScope, SharingStarted.Eagerly, Firebase.auth.currentUser)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
     val uiState = _uiState.asStateFlow()
@@ -78,22 +107,25 @@ class AuthViewModel @Inject constructor(
     fun signIn(email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
-            authRepository.signInWithEmail(email, password)
+            authRepository.signIn(email, password)
                 .onSuccess { _uiState.value = AuthUiState.Success }
                 .onFailure { _uiState.value = AuthUiState.Error(it.message ?: "エラー") }
         }
     }
 
-    fun signUp(email: String, password: String) {
+    fun signInWithGoogle(context: Context) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
-            authRepository.signUpWithEmail(email, password)
+            authRepository.signInWithGoogle(context)
                 .onSuccess { _uiState.value = AuthUiState.Success }
                 .onFailure { _uiState.value = AuthUiState.Error(it.message ?: "エラー") }
         }
     }
 
-    fun signOut() = authRepository.signOut()
+    fun signOut() {
+        authRepository.signOut()
+        _uiState.value = AuthUiState.Idle
+    }
 }
 
 sealed interface AuthUiState {
@@ -110,16 +142,27 @@ sealed interface AuthUiState {
 
 ```kotlin
 @Composable
-fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
+fun LoginScreen(
+    viewModel: AuthViewModel = hiltViewModel(),
+    onLoginSuccess: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    LaunchedEffect(uiState) {
+        if (uiState is AuthUiState.Success) onLoginSuccess()
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Text("ログイン", style = MaterialTheme.typography.headlineLarge)
+        Spacer(Modifier.height(32.dp))
+
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -127,8 +170,7 @@ fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth()
         )
-
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
 
         OutlinedTextField(
             value = password,
@@ -137,27 +179,64 @@ fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
-
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(16.dp))
 
         Button(
             onClick = { viewModel.signIn(email, password) },
             enabled = uiState !is AuthUiState.Loading,
             modifier = Modifier.fillMaxWidth()
-        ) {
-            if (uiState is AuthUiState.Loading) {
-                CircularProgressIndicator(Modifier.size(20.dp), color = Color.White)
-            } else {
-                Text("ログイン")
-            }
+        ) { Text("ログイン") }
+
+        Spacer(Modifier.height(8.dp))
+
+        OutlinedButton(
+            onClick = { viewModel.signInWithGoogle(context) },
+            enabled = uiState !is AuthUiState.Loading,
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Googleでログイン") }
+
+        if (uiState is AuthUiState.Loading) {
+            Spacer(Modifier.height(16.dp))
+            CircularProgressIndicator()
         }
 
         if (uiState is AuthUiState.Error) {
+            Spacer(Modifier.height(16.dp))
             Text(
                 (uiState as AuthUiState.Error).message,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 8.dp)
+                color = MaterialTheme.colorScheme.error
             )
+        }
+    }
+}
+```
+
+---
+
+## 認証状態によるNavigation
+
+```kotlin
+@Composable
+fun AppNavigation(viewModel: AuthViewModel = hiltViewModel()) {
+    val user by viewModel.currentUser.collectAsStateWithLifecycle()
+    val navController = rememberNavController()
+
+    LaunchedEffect(user) {
+        if (user == null) {
+            navController.navigate("login") { popUpTo(0) { inclusive = true } }
+        } else {
+            navController.navigate("home") { popUpTo(0) { inclusive = true } }
+        }
+    }
+
+    NavHost(navController, startDestination = if (user != null) "home" else "login") {
+        composable("login") {
+            LoginScreen(onLoginSuccess = {
+                navController.navigate("home") { popUpTo(0) { inclusive = true } }
+            })
+        }
+        composable("home") {
+            HomeScreen(onLogout = { viewModel.signOut() })
         }
     }
 }
@@ -167,20 +246,26 @@ fun LoginScreen(viewModel: AuthViewModel = hiltViewModel()) {
 
 ## まとめ
 
-- `FirebaseAuth`でメール/パスワード認証
-- `AuthStateListener`をFlowに変換してリアクティブ監視
-- `Result`型でエラーハンドリング
-- `sealed interface`でUI状態管理
-- `PasswordVisualTransformation`でパスワード非表示
-- Google認証は`Credential Manager` + Firebase連携
+| 機能 | メソッド |
+|------|---------|
+| Email登録 | `createUserWithEmailAndPassword()` |
+| Emailログイン | `signInWithEmailAndPassword()` |
+| Googleログイン | `CredentialManager` + `signInWithCredential()` |
+| 状態監視 | `AuthStateListener` → `callbackFlow` |
+| ログアウト | `auth.signOut()` |
+
+- `callbackFlow`で認証状態をリアクティブ監視
+- Credential Manager APIで最新Googleログイン
+- NavigationでログインState分岐
+- sealed interfaceでUI状態管理
 
 ---
 
-8種類のAndroidアプリテンプレート（認証機能実装済み）を公開しています。
+8種類のAndroidアプリテンプレート（認証機能付き）を公開しています。
 
 **テンプレート一覧** → [Gumroad](https://myougatheax.gumroad.com)
 
 関連記事：
-- [Social Login (Credential Manager)](https://zenn.dev/myougatheaxo/articles/android-compose-social-login-2026)
-- [生体認証ガイド](https://zenn.dev/myougatheaxo/articles/android-compose-biometric-auth-2026)
-- [Hilt依存性注入](https://zenn.dev/myougatheaxo/articles/android-hilt-dependency-injection-2026)
+- [暗号化ストレージ](https://zenn.dev/myougatheaxo/articles/android-compose-encrypted-storage-2026)
+- [Navigation](https://zenn.dev/myougatheaxo/articles/android-compose-navigation-nested-2026)
+- [Hilt DI](https://zenn.dev/myougatheaxo/articles/android-compose-dependency-injection-hilt-2026)
