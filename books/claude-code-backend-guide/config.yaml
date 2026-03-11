@@ -1,0 +1,14 @@
+title: "Claude Codeバックエンド実装ガイド — API設計からDB最適化まで"
+summary: "Claude Codeを使ってバックエンド開発を高速化する実践ガイド。REST API設計、認証・認可、DB最適化、キャッシュ戦略、セキュリティ対策まで、プロダクション品質のコードをAIと一緒に書くノウハウを7章で解説。"
+topics: ["claudecode", "backend", "nodejs", "typescript", "api"]
+published: true
+price: 980
+chapters:
+  - intro
+  - chapter1-api-design
+  - chapter2-auth
+  - chapter3-database
+  - chapter4-caching
+  - chapter5-security
+  - chapter6-testing
+  - conclusion
